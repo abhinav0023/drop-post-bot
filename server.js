@@ -1,8 +1,16 @@
 import {Telegraf} from 'telegraf';
 import userModel from './src/models/user.js'
-
+import connectDB from './src/config/db.js'
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+try{
+    connectDB();
+    console.log("database connected");
+}
+catch(e){
+    console.log(e);
+    process.kill(process.pid, 'SIGTERM');
+}
 bot.start(async (ctx) => {
 
     const from = ctx.update.message.from;
