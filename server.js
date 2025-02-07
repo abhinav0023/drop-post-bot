@@ -65,6 +65,12 @@ bot.on(message("text"), async (ctx) => {
   }
 });
 
+bot.command("generate", async (ctx) => {
+  const from = ctx.update.message.from;
+
+  await ctx.reply("working...>")
+})
+
 bot.launch();
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
