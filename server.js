@@ -47,6 +47,43 @@ bot.start(async (ctx) => {
   }
 });
 
+bot.command("generate", async (ctx) => {
+  const from = ctx.update.message.from;
+
+  const startDay = new Date();
+  startDay.setHours(0, 0, 0, 0);
+
+  const endDay = new Date();
+  endDay.setHours(23, 59, 59, 999);
+  // get events for the user
+   const events = await eventModel.find({ 
+    tgId: from.id,
+    createdAt: {
+      // for 24 hours
+      $gte: startDay,
+      $lte: endDay
+    }
+  });
+
+  if(events.length === 0) {
+    await ctx.reply("No events found for the day.");
+    return;
+  }
+  console.log(events);
+
+
+  // make open ai api call 
+
+  // store token count
+
+  // send response 
+
+  
+
+  await ctx.reply("working...>")
+})
+
+
 bot.on(message("text"), async (ctx) => {
   const from = ctx.update.message.from;
   const message = ctx.update.message.text;
@@ -65,11 +102,6 @@ bot.on(message("text"), async (ctx) => {
   }
 });
 
-bot.command("generate", async (ctx) => {
-  const from = ctx.update.message.from;
-
-  await ctx.reply("working...>")
-})
 
 bot.launch();
 // Enable graceful stop
