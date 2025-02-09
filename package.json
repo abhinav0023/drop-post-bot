@@ -14,7 +14,7 @@
     "dotenv": "^16.4.7",
     "mongoose": "^8.9.6",
     "nodemon": "^3.1.9",
-    "openai": "^4.82.0",
+    "openai": "^4.83.0",
     "telegraf": "^4.16.3"
   }
 }

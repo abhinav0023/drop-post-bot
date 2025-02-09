@@ -4,6 +4,8 @@ import userModel from "./src/models/user.js";
 import connectDb from "./src/config/db.js";
 import eventModel from "./src/models/events.js";
 import dotenv from "dotenv";
+import OpenAI from 'openai';
+
 dotenv.config(); // Load .env file
 
 // Initialize Telegram bot instance with provided token
@@ -16,6 +18,9 @@ try {
   console.log(e);
   process.kill(process.pid, "SIGTERM");
 }
+const client = new OpenAI({
+  apiKey: process.env['OPENAI_KEY'], // This is the default and can be omitted
+});
 
 // Handle start command
 bot.start(async (ctx) => {
