@@ -18,6 +18,8 @@ try {
   console.log(e);
   process.kill(process.pid, "SIGTERM");
 }
+
+//connect to open ai 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_KEY'], // This is the default and can be omitted
 });
@@ -78,7 +80,24 @@ bot.command("generate", async (ctx) => {
 
 
   // make open ai api call 
+  try{
+    const chatCompletion = await OpenAI.chat.completions.create({
+      message:[
+        {
+          role: 'system',
+          content: 'Act like a senior copywriter, you write highly engaging posts for linkedin, facebook and twitter using provided througts/events though out the day'
+        },
+        {
+          role: 'user',
+          content: `
+             
+          `
+        }
+      ]
+    })
+  }catch(err){
 
+  }
   // store token count
 
   // send response 
