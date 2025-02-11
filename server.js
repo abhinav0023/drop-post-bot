@@ -81,8 +81,8 @@ bot.command("generate", async (ctx) => {
 
   // make open ai api call 
   try{
-    const chatCompletion = await OpenAI.chat.completions.create({
-      message:[
+    const chatCompletion = await client.chat.completions.create({
+      messages:[
         {
           role: 'system',
           content: 'Act like a senior copywriter, you write highly engaging posts for linkedin, facebook and twitter using provided througts/events though out the day'
@@ -90,14 +90,18 @@ bot.command("generate", async (ctx) => {
         {
           role: 'user',
           content: `
-             
-          `
+             Write like a human , for humans, craft three engaging social media posts tailored for linkedin, facebook and twitter audiences. use simple language. use given time labels understand the order of the event, dont mention the time in the posts. each post should creatively heiglight the following events. ensure the tone is conversational and impactful. focus on engaging the respective platform's audience, encouraging interaction , driving intrests in the events:
+             ${events.map((event)=>event.text).join(', ')}
+          `,
         }
       ],
-      model: process.env.OPENAI_MODE
+      model: process.env.OPENAI_MODEL
     })
-  }catch(err){
+    console.log('completion: ', chatCompletion);
+    await ctx.reply("working...>")
 
+  }catch(err){
+      console.log('facing problems')
   }
   // store token count
 
@@ -105,7 +109,6 @@ bot.command("generate", async (ctx) => {
 
   
 
-  await ctx.reply("working...>")
 })
 
 
