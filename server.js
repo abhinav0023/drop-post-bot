@@ -93,7 +93,8 @@ bot.command("generate", async (ctx) => {
              
           `
         }
-      ]
+      ],
+      model: process.env.OPENAI_MODE
     })
   }catch(err){
 
