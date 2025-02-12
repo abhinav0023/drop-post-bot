@@ -4,12 +4,14 @@ import userModel from "./src/models/user.js";
 import connectDb from "./src/config/db.js";
 import eventModel from "./src/models/events.js";
 import dotenv from "dotenv";
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 
 dotenv.config(); // Load .env file
 
 // Initialize Telegram bot instance with provided token
 const bot = new Telegraf(process.env.BOT_TOKEN);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Connect to MongoDB database
 try {
@@ -18,11 +20,6 @@ try {
   console.log(e);
   process.kill(process.pid, "SIGTERM");
 }
-
-//connect to open ai 
-const client = new OpenAI({
-  apiKey: process.env['OPENAI_KEY'], // This is the default and can be omitted
-});
 
 // Handle start command
 bot.start(async (ctx) => {
@@ -56,61 +53,69 @@ bot.start(async (ctx) => {
 
 bot.command("generate", async (ctx) => {
   const from = ctx.update.message.from;
-
+  
   const startDay = new Date();
   startDay.setHours(0, 0, 0, 0);
 
   const endDay = new Date();
   endDay.setHours(23, 59, 59, 999);
-  // get events for the user
-   const events = await eventModel.find({ 
-    tgId: from.id,
-    createdAt: {
-      // for 24 hours
-      $gte: startDay,
-      $lte: endDay
+
+  try {
+    const events = await eventModel.find({ 
+      tgId: from.id,
+      createdAt: {
+        $gte: startDay,
+        $lte: endDay
+      }
+    });
+
+    if(events.length === 0) {
+      await ctx.reply("No events found for the day.");
+      return;
     }
-  });
 
-  if(events.length === 0) {
-    await ctx.reply("No events found for the day.");
-    return;
+    // Combine all events into a single prompt
+    const combinedEvents = events.map(e => `- ${e.text}`).join('\n');
+    const prompt = `Create social media posts based on these daily thoughts. Follow these guidelines:
+    1. LinkedIn: Professional tone, 3-5 paragraphs, include relevant hashtags
+    2. Facebook: Conversational tone, 2-3 paragraphs, emojis
+    3. Twitter: Concise, 1-2 sentences max, trending hashtags
+    4. All posts must be in the same language as the thoughts
+    
+    Thoughts:
+    ${combinedEvents}
+
+    Format your response:
+    LinkedIn: [content]
+    Facebook: [content]
+    Twitter: [content]`;
+
+    // Generate content with Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const generatedText = response.text();
+
+    // Store token usage
+    await userModel.findOneAndUpdate(
+      { tgId: from.id },
+      { $inc: { promptToken: response.usageMetadata?.totalTokenCount || 0 } }
+    );
+
+    // Split and send responses
+    const platforms = generatedText.split(/\n(?=[A-Za-z]+:)/);
+    await ctx.reply("Here are your social media posts for today:\n");
+    
+    for (const platformPost of platforms) {
+      await ctx.reply(platformPost.trim());
+      await new Promise(resolve => setTimeout(resolve, 500)); // Avoid rate limiting
+    }
+
+  } catch (err) {
+    console.error(err);
+    await ctx.reply("Error generating posts. Please try again later.");
   }
-  console.log(events);
-
-
-  // make open ai api call 
-  try{
-    const chatCompletion = await client.chat.completions.create({
-      messages:[
-        {
-          role: 'system',
-          content: 'Act like a senior copywriter, you write highly engaging posts for linkedin, facebook and twitter using provided througts/events though out the day'
-        },
-        {
-          role: 'user',
-          content: `
-             Write like a human , for humans, craft three engaging social media posts tailored for linkedin, facebook and twitter audiences. use simple language. use given time labels understand the order of the event, dont mention the time in the posts. each post should creatively heiglight the following events. ensure the tone is conversational and impactful. focus on engaging the respective platform's audience, encouraging interaction , driving intrests in the events:
-             ${events.map((event)=>event.text).join(', ')}
-          `,
-        }
-      ],
-      model: process.env.OPENAI_MODEL
-    })
-    console.log('completion: ', chatCompletion);
-    await ctx.reply("working...>")
-
-  }catch(err){
-      console.log('facing problems')
-  }
-  // store token count
-
-  // send response 
-
-  
-
-})
-
+});
 
 bot.on(message("text"), async (ctx) => {
   const from = ctx.update.message.from;
