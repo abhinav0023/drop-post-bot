@@ -77,7 +77,7 @@ bot.command("generate", async (ctx) => {
     // Combine all events into a single prompt
     const combinedEvents = events.map(e => `- ${e.text}`).join('\n');
     const prompt = `Create social media posts based on these daily thoughts. Follow these guidelines:
-    1. LinkedIn: Professional tone, 3-5 paragraphs, include relevant hashtags
+    1. LinkedIn: Professional tone, 3-4 paragraphs, include relevant hashtags
     2. Facebook: Conversational tone, 2-3 paragraphs, emojis
     3. Twitter: Concise, 1-2 sentences max, trending hashtags
     4. All posts must be in the same language as the thoughts
@@ -120,6 +120,8 @@ bot.command("generate", async (ctx) => {
 bot.on(message("text"), async (ctx) => {
   const from = ctx.update.message.from;
   const message = ctx.update.message.text;
+  const userLang = from.language_code || "en";
+  console.log(userLang);
 
   try {
     await eventModel.create({
@@ -141,4 +143,3 @@ bot.launch();
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
-// add language support
