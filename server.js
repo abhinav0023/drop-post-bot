@@ -120,9 +120,6 @@ bot.command("generate", async (ctx) => {
 bot.on(message("text"), async (ctx) => {
   const from = ctx.update.message.from;
   const message = ctx.update.message.text;
-  const userLang = from.language_code || "en";
-  console.log(userLang);
-
   try {
     await eventModel.create({
       text: message,
@@ -142,4 +139,5 @@ bot.launch();
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
 
