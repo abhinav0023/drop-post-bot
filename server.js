@@ -52,6 +52,7 @@ bot.start(async (ctx) => {
   }
 });
 
+// generate command
 bot.command("generate", async (ctx) => {
   const from = ctx.update.message.from;
   
