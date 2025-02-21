@@ -21,6 +21,21 @@ try {
   console.log(e);
   process.kill(process.pid, "SIGTERM");
 }
+// detect langauge 
+async function detectLanguage(text) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(
+      `Detect the language of the following text and return only the language name:
+      \n\n${text}`
+    );
+    return result.response.text().trim();
+  } catch (error) {
+    console.error("Language detection error:", error);
+    return "English"; // Default to English if detection fails
+  }
+}
+
 
 // Handle start command
 bot.start(async (ctx) => {
@@ -58,35 +73,32 @@ bot.command("generate", async (ctx) => {
   
   const startDay = new Date();
   startDay.setHours(0, 0, 0, 0);
-
   const endDay = new Date();
   endDay.setHours(23, 59, 59, 999);
 
   try {
     const events = await eventModel.find({ 
       tgId: from.id,
-      createdAt: {
-        $gte: startDay,
-        $lte: endDay
-      }
+      createdAt: { $gte: startDay, $lte: endDay }
     });
 
-    if(events.length === 0) {
+    if (events.length === 0) {
       await ctx.reply("No events found for the day.");
       return;
     }
 
-    // Combine all events into a single prompt
-    const combinedEvents = events.map(e => `- ${e.text}`).join('\n');
-    const prompt = `Create social media posts based on these daily thoughts. Follow these guidelines:
+    // Combine all events into a single text for language detection
+    const combinedEvents = events.map(e => e.text).join("\n");
+    const detectedLanguage = await detectLanguage(combinedEvents);
+
+    const prompt = `Create social media posts based on these daily thoughts in ${detectedLanguage}. Follow these guidelines:
     1. LinkedIn: Professional tone, 3-4 paragraphs, include relevant hashtags
     2. Facebook: Conversational tone, 2-3 paragraphs, emojis
     3. Twitter: Concise, 1-2 sentences max, trending hashtags
-    4. All posts must be in the same language as the thoughts
     
     Thoughts:
     ${combinedEvents}
-
+    
     Format your response:
     LinkedIn: [content]
     Facebook: [content]
@@ -106,7 +118,7 @@ bot.command("generate", async (ctx) => {
 
     // Split and send responses
     const platforms = generatedText.split(/\n(?=[A-Za-z]+:)/);
-    await ctx.reply("Here are your social media posts for today:\n");
+    await ctx.reply("Here are your social media posts for today:");
     
     for (const platformPost of platforms) {
       await ctx.reply(platformPost.trim());
